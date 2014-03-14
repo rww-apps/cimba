@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
 <meta charset="utf-8">
-<title>Cimba</title>
+<title>Kima</title>
 <meta name="generator" content="Cimba">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <!-- prod
@@ -50,7 +50,7 @@
     <div class="navbar navbar-default" id="subnav">
         <div class="col-md-12">
             <div class="navbar-header">
-                <img src="img/cimba-logo-dark.png" class="logo">                
+                <img src="img/kima-logo.png" class="logo">                
                 <button id="menuToggle" type="button" class="navbar-toggle pull-right" data-toggle="collapse" data-target="#navbar-collapse2">
                     <span class="sr-only">Toggle navigation</span>
                     <i class="fa fa-bars fa-2x blue"></i>
@@ -124,7 +124,7 @@
                     </div>
                     <div class="panel-body">
                         <div class="panel-body">
-                          <h2 class="text-center">Welcome to <img src="img/cimba-logo.png" height="50"></h2>
+                          <h2 class="text-center">Welcome to <img src="img/kima-logo.png" height="50"></h2>
                           <div class="text-center">
                             <h3>You must be authenticated in order to use this microblogging application.</h3>
                             <a href="#loginModal" role="button" data-toggle="modal"><button class="btn btn-primary btn-sep-right">Login / Sign Up</button></a>
@@ -153,7 +153,7 @@
         <div class="row">
             <div class="col-md-12">
                 <div class="panel panel-default text-center">
-                    <h3>To start using Cimba, you will need a microblogging space.</h3>
+                    <h3>To start using Kima, you will need a microblogging space.</h3>
                     <p><a href="#newMBModal" role="button" data-toggle="modal"><button class="btn btn-primary">Click here to create one</button></a></p>
                 </div>
             </div>
@@ -196,7 +196,7 @@
               </div>
               <div class="modal-body">
                   <form class="m10">
-                      <p><small class="white">Full URI starting with http(s)://</small></p>
+                      <p><small class="white">Full storage location URI. Must start with http(s)://</small></p>
                       <input type="text" id="storageuri" name="storageuri" ng-model="storageuri" class="form-control" placeholder="http.." required ng-pattern="/^http[A-Za-z0-9_.:/]*$/">
                     <div ng-show="storageuri" class="text-center">
                       <br>
@@ -306,7 +306,7 @@
                         <p>Please provide the WebID for the channel owner.</p>
                         <div class="input-group">
                             <div class="input-group-btn">
-                              <input type="search" id="searchwebid" name="searchwebid" class="form-control" ng-model="searchwebid" autofocus required>
+                              <input type="search" id="searchwebid" name="searchwebid" class="form-control" ng-model="searchwebid" ng-pattern="/^http[A-Za-z0-9_#.:/]*$/">
                               <button class="btn btn-default searchbutton pull-right" ng-click="searchwebid=''" ng-show="searchwebid"><i class="fa fa-times"></i></button>
                               <button class="btn btn-primary searchbutton" ng-click="getInfo(searchwebid); searchbtn='Searching...'" ng-disabled="!searchwebid"><i class="fa fa-search"></i> {{searchbtn}}</button>
                             </div>
@@ -347,7 +347,7 @@
 </div>
 <!-- bottom -->
 <div class="col-md-12 text-center">
-    <p>Powered by <a href="https://github.com/social-webarch/cimba" target="_blank">CIMBA</a> v1.0 alpha | <a href="https://github.com/social-webarch/cimba/issues" target="_blank">Bug tracker</a> | <a href="#aboutModal" role="button" data-toggle="modal">About</a></p>
+    <p>Powered by <a href="https://github.com/rww-apps/kima" target="_blank">Kima</a> v1.0 alpha | <a href="https://github.com/rww-apps/kima/issues" target="_blank">Bug tracker</a> | <a href="#aboutModal" role="button" data-toggle="modal">About</a></p>
 </div>
 <!--/main-->
 
@@ -372,9 +372,9 @@
       </div>
       <div class="modal-body">
           <div class="col-md-12 text-center">
-            <h3>This microblogging app is powered by Cimba v1.0 alpha</h3>
+            <h3>This microblogging app is powered by Kima v1.0 alpha</h3>
             <br>
-            <h3><a href="https://github.com/social-webarch/cimba" target="_blank">Fork on GitHub</a></h3>
+            <h3><a href="https://github.com/rww-apps/kima" target="_blank">Fork on GitHub</a></h3>
           </div>
       </div>
       <div class="modal-footer">
