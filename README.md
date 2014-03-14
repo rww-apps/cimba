@@ -1,6 +1,6 @@
-cimba
+KIMA
 =====
 
-Client-Integrated Micro-Blogging Architecture application
+Killer Infrastructure Micro-Blogging Application
 
 
