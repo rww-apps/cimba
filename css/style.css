@@ -14,7 +14,7 @@ h4 {
 .clear-10 {
   margin-top: 10px;
 }
-.clear-40 {
+.clear-40 {s
   margin-top: 40px;
 }
 .clear-70 {
@@ -274,7 +274,7 @@ code {
   color: #fff !important;
 }
 #signup {
-  width:380px;
+  width:350px;
   height:200px;
 }
 
