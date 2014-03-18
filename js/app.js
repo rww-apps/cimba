@@ -1,8 +1,3 @@
-/* TODO: 
-	* add ACLs!
-	* display the "Snap" messages only after we're sure there are no channels/posts.
-*/
-
 // some config
 var PROXY = "https://rww.io/proxy?uri={uri}";
 // add filters
@@ -13,6 +8,7 @@ ngCimba.filter('fromNow', function() {
     return moment(date).fromNow();
   }
 });
+
 // order function for ng-repeat using lists instead of arrays
 ngCimba.filter('orderObjectBy', function(){
  return function(input, attribute) {
@@ -50,7 +46,7 @@ ngCimba.filter('unique', function() {
 });
 
 // Main angular controller
-function CimbaCtrl($scope, $filter) {
+function CimbaCtrl($scope, $http, $filter) {
 	// default values
 	// show loading spinner
 	$scope.loading = false;
@@ -84,7 +80,7 @@ function CimbaCtrl($scope, $filter) {
 	$scope.me.gotposts = true;
 	$scope.me.channels = [];
 
-	// cache user credentials in localStorage to avoid double sign in
+	// cache user credentials in sessionStorage to avoid double sign in
 	$scope.saveCredentials = function () {
 		var cimba = {};
 		var _user = {};
@@ -96,13 +92,13 @@ function CimbaCtrl($scope, $filter) {
 		_user.mbspace = $scope.me.mbspace;
 		_user.chspace = $scope.me.chspace;
 		cimba.me = _user;
-		localStorage.setItem($scope.appuri+$scope.me.webid, JSON.stringify(cimba));
+		sessionStorage.setItem($scope.appuri, JSON.stringify(cimba));
 	}
 
-	// retrieve from localStorage
+	// retrieve from sessionStorage
 	$scope.loadCredentials = function () {
-		if (localStorage.getItem($scope.appuri+$scope.me.webid)) {
-			var cimba = JSON.parse(localStorage.getItem($scope.appuri+$scope.me.webid));
+		if (sessionStorage.getItem($scope.appuri)) {
+			var cimba = JSON.parse(sessionStorage.getItem($scope.appuri));
 			if (cimba.me) {
 				$scope.me.webid = cimba.me.webid;
 				$scope.me.name = cimba.me.name;
@@ -114,27 +110,21 @@ function CimbaCtrl($scope, $filter) {
 				$scope.loggedin = true;
 				if ($scope.me.channels)
 					$scope.defaultChannel = $scope.me.channels[0];
-				// load users (following)
-				$scope.loadUsers();
+				// load from PDS (follows)
+				if ($scope.me.mbspace && (!$scope.users || $scope.users.length == 0))
+					$scope.getUsers();
+				// refresh data
+				$scope.getInfo(cimba.me.webid, true);
 			} else {
-				// clear localStorage in case there was a change to the data structure
-				localStorage.removeItem($scope.appuri+$scope.me.webid);
+				// clear sessionStorage in case there was a change to the data structure
+				sessionStorage.removeItem($scope.appuri);
 			}
 		}
 	}
 
 	// save the list of users + channels
 	$scope.saveUsers = function () {
-		// save to localStorage
-		if (localStorage.getItem($scope.appuri+$scope.me.webid))
-			var cimba = JSON.parse(localStorage.getItem($scope.appuri+$scope.me.webid));
-		else
-			var cimba = {};
-		
-		cimba.users = $scope.users;
-		localStorage.setItem($scope.appuri+$scope.me.webid, JSON.stringify(cimba));
-
-		// also save to PDS
+		// save to PDS
 		// TODO: try to discover the followURI instead?
 		var channels = []; // temporary channel list (will load posts from them once this is done)
 		var followURI = ''; // uri of the preferences file
@@ -223,19 +213,6 @@ function CimbaCtrl($scope, $filter) {
 		    });
 		}
 	}
-	// load the list of users + channels from localStorage
-	$scope.loadUsers = function () {
-		$scope.users = {};
-		// load from localStorage
-		if (localStorage.getItem($scope.appuri+$scope.me.webid)) {
-			var cimba = JSON.parse(localStorage.getItem($scope.appuri+$scope.me.webid));			
-			$scope.users = cimba.users;
-		} 
-
-		// load from PDS
-		if ($scope.me.mbspace && (!$scope.users || $scope.users.length == 0))
-			$scope.getUsers();
-	}
 
 	// get list of users (that I'm following) + their channels
 	// optionally load posts
@@ -278,7 +255,7 @@ function CimbaCtrl($scope, $filter) {
 							    	_channel.css = ch.css = 'btn-success';
 									// also load the posts for this channel
 									if (loadposts && _channel.uri)
-										$scope.getPosts(_channel.uri);
+										$scope.getPosts(_channel.uri, channel.title);
 								} else {
 							    	_channel.action = ch.action = 'Subscribe';
 									_channel.button = ch.button = 'fa-square-o';
@@ -295,6 +272,26 @@ function CimbaCtrl($scope, $filter) {
 						$scope.$apply();
 					}
 				}
+			});
+		}
+	}
+
+	// attempt to find a person using webizen.org
+	$scope.lookupWebID = function() {
+		console.log('Searching for '+$scope.searchwebid);
+
+		if ($scope.searchwebid.length > 0) {
+			$http.get('http://webizen.org/v1/search', {
+				params: {
+					q: $scope.searchwebid
+				}
+				}).then(function(res){
+					$scope.webidresults = [];
+					angular.forEach(res.data, function(value, key){
+						value.webid = key;
+						$scope.webidresults.push(value);
+						
+					});
 			});
 		}
 	}
@@ -330,28 +327,13 @@ function CimbaCtrl($scope, $filter) {
 		}
 	}
 
-	// save current posts in localStorage
-	$scope.savePosts = function () {
-		if ($scope.posts && !isEmpty($scope.posts)) {
-			if (localStorage.getItem($scope.appuri+$scope.me.webid))
-				var cimba = JSON.parse(localStorage.getItem($scope.appuri+$scope.me.webid));
-			else
-				var cimba = {};
-
-			cimba.posts = $scope.posts;
-			localStorage.setItem($scope.appuri+$scope.me.webid, JSON.stringify(cimba));
-		} else {
-			$scope.me.gotposts = false;
-		}
-	}
-
 	// update the view with new posts
 	$scope.updatePosts = function() {
-		$scope.loading = true;
-		if ($scope.me.channels.length > 0) {
+		if ($scope.me && $scope.me.channels && $scope.me.channels.length > 0) {
 			// add my posts
+			$scope.loading = true;
 			for (c in $scope.me.channels) {
-				$scope.getPosts($scope.me.channels[c].uri);
+				$scope.getPosts($scope.me.channels[c].uri, $scope.me.channels[c].title);
 			}
 		}
 
@@ -362,21 +344,9 @@ function CimbaCtrl($scope, $filter) {
 				for (c in _user.channels) {
 					var ch = _user.channels[c].uri;
 					if (ch)
-						$scope.getPosts(ch);
+						$scope.getPosts(ch, _user.channels[c].title);
 				}
 			}
-		}
-	}
-
-	// load the posts from localStorage
-	$scope.loadPosts = function () {
-		if (!$scope.posts)
-			$scope.posts = {};
-		if (localStorage.getItem($scope.appuri+$scope.me.webid)) {
-			var cimba = JSON.parse(localStorage.getItem($scope.appuri+$scope.me.webid));
-			$scope.posts = cimba.posts;
-			if (!$scope.posts || isEmpty($scope.posts))
-				$scope.me.gotposts = false;
 		}
 	}
 
@@ -402,7 +372,6 @@ function CimbaCtrl($scope, $filter) {
 		        	notify('Success', 'Your post was removed from the server!')
 					// TODO: TEST THIS AGAIN!!!
 					$scope.removePost(post.uri);
-					$scope.savePosts();
 					$scope.$apply();
 					// also remove the ACL file
 					var acl = parseLinkHeader(r.getResponseHeader('Link'));
@@ -440,8 +409,6 @@ function CimbaCtrl($scope, $filter) {
 					modified = true;
 				}
 			}
-			if (modified)
-				$scope.savePosts();
 		}
 	}
 
@@ -456,21 +423,19 @@ function CimbaCtrl($scope, $filter) {
 					modified = true;
 				}
 			}
-			if (modified)
-				$scope.savePosts();
 		}
 	}
 
-	// clear localStorage
+	// clear sessionStorage
 	$scope.clearLocalCredentials = function () {
-		localStorage.removeItem($scope.appuri+$scope.me.webid);
+		sessionStorage.removeItem($scope.appuri);
 	}
 
-	// logout (clear localStorage)
+	// logout (clear sessionStorage)
 	$scope.clearSession = function () {
 		// try to logout certificate
 		logout();
-		// clear localStorage
+		// clear sessionStorage
 		$scope.clearLocalCredentials();
 		$scope.me = {};
 		$scope.posts = {};
@@ -900,7 +865,6 @@ function CimbaCtrl($scope, $filter) {
 					$scope.setACL(postURI, $scope.audience.range);
 					// save to local posts
 					$scope.$apply();
-					$scope.savePosts();
 				} else {
 					console.log('Error: posting on the server did not return a Location header');
 					notify('Error', 'Unable to save post on the server!');
@@ -1056,14 +1020,14 @@ function CimbaCtrl($scope, $filter) {
 					c.action = ch.action = 'Unsubscribe';
 					c.button = ch.button = 'fa-check-square-o';
 			    	c.css = ch.css = 'btn-success';
-			    	$scope.getPosts(ch.uri);
+			    	$scope.getPosts(ch.uri, ch.title);
 		    	}
 	    	} else {
 	    		// subscribe
 	    		ch.action = 'Unsubscribe';
 				ch.button = 'fa-check-square-o';
 		    	ch.css = 'btn-success';
-		    	$scope.getPosts(ch.uri);
+		    	$scope.getPosts(ch.uri, ch.title);
 	    	}
 	    	// also update the users list in case there is a new channel
 	    	$scope.users[user.webid] = user;
@@ -1077,7 +1041,7 @@ function CimbaCtrl($scope, $filter) {
 				$scope.users = {};
 			$scope.users[user.webid] = user;
 			$scope.saveUsers();
-			$scope.getPosts(ch.uri);
+			$scope.getPosts(ch.uri, ch.title);
 		}
 	}
 
@@ -1182,7 +1146,7 @@ function CimbaCtrl($scope, $filter) {
 		        if (!storage)
 		        	$scope.loading = false; // hide spinner
 
-		    	// cache user credentials in localStorage
+		    	// cache user credentials in sessionStorage
 		    	$scope.saveCredentials();
 		    	// also add myself to the users list
 		    	//$scope.users[webid] = _user;
@@ -1250,7 +1214,7 @@ function CimbaCtrl($scope, $filter) {
 								if (mine) {
 									$scope.me.channels.push(channel);
 		        					// force get the posts for my channels
-		        					$scope.getPosts(channel.uri);
+		        					$scope.getPosts(channel.uri, channel.title);
 									$scope.me.chspace = true;
 								}
 
@@ -1322,7 +1286,7 @@ function CimbaCtrl($scope, $filter) {
 	}
 	
 	// get all posts for a given microblogging workspace
-	$scope.getPosts = function(channel) {
+	$scope.getPosts = function(channel, title) {
 		var RDF = $rdf.Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#");
 		var DCT = $rdf.Namespace("http://purl.org/dc/terms/");
 	    var FOAF = $rdf.Namespace("http://xmlns.com/foaf/0.1/");
@@ -1386,6 +1350,7 @@ function CimbaCtrl($scope, $filter) {
 					var _newPost = {
 						uri : uri,
 						channel: channel,
+						chtitle: title,
 						date : date,
 						userwebid : userwebid,
 						userpic : userpic,
@@ -1405,9 +1370,6 @@ function CimbaCtrl($scope, $filter) {
 						$scope.$apply();
 					}
 				}
-
-				// done loading, save posts to localStorage
-				$scope.savePosts();
 			} else {
 				if (isEmpty($scope.posts))
 					$scope.me.gotposts = false;
@@ -1441,9 +1403,8 @@ function CimbaCtrl($scope, $filter) {
 		}
 	},false);
 
-	// init by retrieving user from localStorage
+	// init by retrieving user from sessionStorage
 	$scope.loadCredentials();
-	$scope.loadPosts();
 }
 
 //simple directive to display new post box
@@ -1460,7 +1421,7 @@ ngCimba.directive('postsViewer',function(){
   	return {
 		replace : true,
 		restrict : 'E',
-		templateUrl: 'tpl/post.html'
+		templateUrl: 'tpl/posts.html'
     }; 
 })
 
@@ -1470,5 +1431,14 @@ ngCimba.directive('channelslist',function(){
 		replace : true,
 		restrict : 'E',
 		templateUrl: 'tpl/channel-list.html'
+    }; 
+})
+
+//simple directive to display list of search results
+ngCimba.directive('searchresults',function(){
+  	return {
+		replace : true,
+		restrict : 'E',
+		templateUrl: 'tpl/search_results.html'
     }; 
 })
