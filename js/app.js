@@ -255,7 +255,7 @@ function CimbaCtrl($scope, $http, $filter) {
 							    	_channel.css = ch.css = 'btn-success';
 									// also load the posts for this channel
 									if (loadposts && _channel.uri)
-										$scope.getPosts(_channel.uri, channel.title);
+										$scope.getPosts(_channel.uri, _channel.title);
 								} else {
 							    	_channel.action = ch.action = 'Subscribe';
 									_channel.button = ch.button = 'fa-square-o';
