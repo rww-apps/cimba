@@ -153,6 +153,9 @@ pre {
 .panel .panel-heading a {
   font-weight:400;
 }
+.panel .panel-heading small {
+  font-weight:400;
+}
 .panel-heading {
   padding: 0px 5px 0px 0px!important;
   height: 70px;
