@@ -1196,7 +1196,8 @@ function CimbaCtrl($scope, $http, $filter) {
 				        	// clear list first
 				        	if (mine)
 				        		$scope.me.channels = [];
-
+						if (update)
+							$scope.users[webid].channels = [];
 				        	for (var ch in chs) {
 		        				var channel = {};
 		        				channel.uri = chs[ch]['subject']['value'];
@@ -1220,8 +1221,6 @@ function CimbaCtrl($scope, $http, $filter) {
 
 								// update
 								if (update) {
-									if (!$scope.users[webid].channels)
-										$scope.users[webid].channels = [];
 									var exists = findWithAttr($scope.users[webid].channels, 'uri', channel.uri);
 									if (exists == undefined) {
 										$scope.users[webid].channels.push(channel);
