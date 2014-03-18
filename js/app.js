@@ -1421,7 +1421,7 @@ ngCimba.directive('postsViewer',function(){
   	return {
 		replace : true,
 		restrict : 'E',
-		templateUrl: 'tpl/posts.html'
+		templateUrl: 'tpl/post.html'
     }; 
 })
 
